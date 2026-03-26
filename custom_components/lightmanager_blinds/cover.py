@@ -40,8 +40,13 @@ async def async_setup_entry(
     blinds = entry.options.get(CONF_BLINDS, [])
 
     entities = []
+    covers_registry = hass.data[DOMAIN][entry.entry_id]["covers"]
+
     for blind_config in blinds:
-        entities.append(LightManagerBlind(lm_air, blind_config, entry.entry_id))
+        entity = LightManagerBlind(lm_air, blind_config, entry.entry_id)
+        entities.append(entity)
+        # Register for webhook lookup by slug
+        covers_registry[entity.slug] = entity
 
     async_add_entities(entities)
 
@@ -73,8 +78,8 @@ class LightManagerBlind(CoverEntity, RestoreEntity):
         self._move_start_position = None
         self._move_task = None
 
-        slug = self._name.lower().replace(" ", "_").replace("ä", "ae").replace("ö", "oe").replace("ü", "ue")
-        self._attr_unique_id = f"lm_blind_{slug}"
+        self.slug = self._name.lower().replace(" ", "_").replace("ä", "ae").replace("ö", "oe").replace("ü", "ue").replace("ß", "ss")
+        self._attr_unique_id = f"lm_blind_{self.slug}"
         self._attr_device_info = {
             "identifiers": {(DOMAIN, f"lm_blind_{slug}")},
             "name": self._name,
@@ -148,15 +153,30 @@ class LightManagerBlind(CoverEntity, RestoreEntity):
         move_duration = (distance / 100.0) * runtime
         await self._start_move(direction, duration=move_duration)
 
+    # --- External control (webhook from remote) ---
+
+    async def async_external_command(self, action: str) -> None:
+        """Handle external command from webhook (remote control)."""
+        if action in ("up", "down"):
+            await self._start_move(action, external=True)
+        elif action == "stop":
+            await self._stop_move(external=True)
+
     # --- Movement logic ---
 
-    async def _start_move(self, direction: str, duration: float = None) -> None:
-        """Start moving the blind."""
+    async def _start_move(self, direction: str, duration: float = None,
+                          external: bool = False) -> None:
+        """Start moving the blind.
+
+        Args:
+            direction: "up" or "down"
+            duration: optional movement duration in seconds
+            external: if True, skip sending command to LM Air (remote already did it)
+        """
         # Stop any current movement first
         if self._moving:
-            await self._stop_move()
+            await self._stop_move(external=external)
 
-        lm_id = self._id_up if direction == "up" else self._id_down
         runtime = self._runtime_up if direction == "up" else self._runtime_down
 
         if duration is None:
@@ -169,31 +189,34 @@ class LightManagerBlind(CoverEntity, RestoreEntity):
         if duration <= 0:
             return
 
-        success = await self._lm_air.send_command(lm_id)
-        if not success:
-            log.error("Failed to send %s command for %s", direction, self._name)
-            return
+        if not external:
+            lm_id = self._id_up if direction == "up" else self._id_down
+            success = await self._lm_air.send_command(lm_id)
+            if not success:
+                log.error("Failed to send %s command for %s", direction, self._name)
+                return
 
         self._moving = direction
         self._move_start_time = time.monotonic()
         self._move_start_position = self._position
         self.async_write_ha_state()
 
-        log.info("%s: moving %s for %.1fs (from %d%%)",
-                 self._name, direction, duration, self._position)
+        source = "external" if external else "HA"
+        log.info("%s: moving %s for %.1fs (from %d%%, %s)",
+                 self._name, direction, duration, self._position, source)
 
         # Schedule auto-stop
         self._move_task = self.hass.async_create_task(
-            self._auto_stop(duration)
+            self._auto_stop(duration, external)
         )
 
-    async def _auto_stop(self, duration: float) -> None:
+    async def _auto_stop(self, duration: float, external: bool = False) -> None:
         """Auto-stop after duration."""
         await asyncio.sleep(duration)
         self._move_task = None  # Clear self-reference before stopping
-        await self._stop_move()
+        await self._stop_move(external=external)
 
-    async def _stop_move(self) -> None:
+    async def _stop_move(self, external: bool = False) -> None:
         """Stop movement and update position."""
         if self._move_task and not self._move_task.done():
             self._move_task.cancel()
@@ -203,8 +226,9 @@ class LightManagerBlind(CoverEntity, RestoreEntity):
         if self._moving and self._move_start_time:
             self._position = self._calculate_live_position()
 
-        # Send stop command
-        await self._lm_air.send_command(self._id_stop)
+        # Send stop command (skip if triggered by remote)
+        if not external:
+            await self._lm_air.send_command(self._id_stop)
 
         log.info("%s: stopped at %d%%", self._name, self._position)
 
