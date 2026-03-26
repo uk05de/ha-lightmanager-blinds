@@ -81,7 +81,7 @@ class LightManagerBlind(CoverEntity, RestoreEntity):
         self.slug = self._name.lower().replace(" ", "_").replace("ä", "ae").replace("ö", "oe").replace("ü", "ue").replace("ß", "ss")
         self._attr_unique_id = f"lm_blind_{self.slug}"
         self._attr_device_info = {
-            "identifiers": {(DOMAIN, f"lm_blind_{slug}")},
+            "identifiers": {(DOMAIN, f"lm_blind_{self.slug}")},
             "name": self._name,
             "manufacturer": "jbmedia",
             "model": "Light Manager Air",
