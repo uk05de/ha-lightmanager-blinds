@@ -190,6 +190,7 @@ class LightManagerBlind(CoverEntity, RestoreEntity):
     async def _auto_stop(self, duration: float) -> None:
         """Auto-stop after duration."""
         await asyncio.sleep(duration)
+        self._move_task = None  # Clear self-reference before stopping
         await self._stop_move()
 
     async def _stop_move(self) -> None:
