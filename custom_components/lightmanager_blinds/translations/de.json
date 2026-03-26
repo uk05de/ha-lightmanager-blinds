@@ -1,0 +1,45 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Light Manager Air",
+        "description": "Gib die IP-Adresse deines Light Manager Air ein.",
+        "data": {
+          "lm_air_host": "IP-Adresse"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Verbindung zum Light Manager Air fehlgeschlagen."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Rollos verwalten",
+        "description": "Aktuell {count} Rollo(s) konfiguriert.",
+        "menu_options": {
+          "add_blind": "Rollo hinzufügen",
+          "remove_blind": "Rollo entfernen"
+        }
+      },
+      "add_blind": {
+        "title": "Rollo hinzufügen",
+        "data": {
+          "name": "Name",
+          "lm_air_id_up": "LM Air ID Hoch",
+          "lm_air_id_down": "LM Air ID Runter",
+          "lm_air_id_stop": "LM Air ID Stop",
+          "runtime_up": "Laufzeit Hoch (Sekunden)",
+          "runtime_down": "Laufzeit Runter (Sekunden)"
+        }
+      },
+      "remove_blind": {
+        "title": "Rollo entfernen",
+        "data": {
+          "blind": "Rollo auswählen"
+        }
+      }
+    }
+  }
+}

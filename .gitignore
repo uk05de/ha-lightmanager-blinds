@@ -1,0 +1,14 @@
+.DS_Store
+.idea/
+__pycache__/
+*.pyc
+
+# Old YAML configs (kept locally for reference)
+automation/
+blueprints/
+input_number/
+input_text/
+rest_command/
+scripts/
+template/
+timer/

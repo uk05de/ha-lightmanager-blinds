@@ -1,0 +1,12 @@
+{
+  "domain": "lightmanager_blinds",
+  "name": "Light Manager Blinds",
+  "codeowners": ["@uk05de"],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/uk05de/ha-lightmanager-blinds",
+  "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/uk05de/ha-lightmanager-blinds/issues",
+  "requirements": ["aiohttp"],
+  "version": "0.1.0"
+}

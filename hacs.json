@@ -1,0 +1,6 @@
+{
+  "name": "Light Manager Blinds",
+  "render_readme": true,
+  "domains": ["cover"],
+  "iot_class": "local_polling"
+}
