@@ -12,7 +12,7 @@ from homeassistant.components.cover import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers import device_registry as dr, entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
 
@@ -52,12 +52,20 @@ async def async_setup_entry(
         # Register for webhook lookup by slug
         covers_registry[entity.slug] = entity
 
-    # Remove stale entities from the entity registry
+    # Remove stale entities and devices from the registries
     ent_reg = er.async_get(hass)
+    dev_reg = dr.async_get(hass)
+    expected_device_ids = {(DOMAIN, f"lm_blind_{e.slug}") for e in entities}
+
     for reg_entry in er.async_entries_for_config_entry(ent_reg, entry.entry_id):
         if reg_entry.unique_id not in expected_unique_ids:
             log.info("Removing stale entity: %s", reg_entry.entity_id)
             ent_reg.async_remove(reg_entry.entity_id)
+
+    for dev_entry in dr.async_entries_for_config_entry(dev_reg, entry.entry_id):
+        if not dev_entry.identifiers & expected_device_ids:
+            log.info("Removing stale device: %s", dev_entry.name)
+            dev_reg.async_remove_device(dev_entry.id)
 
     async_add_entities(entities)
 
