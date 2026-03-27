@@ -57,23 +57,14 @@ async def async_setup_entry(
     dev_reg = dr.async_get(hass)
     expected_device_ids = {(DOMAIN, f"lm_blind_{e.slug}") for e in entities}
 
-    log.warning("Cleanup: expected unique_ids=%s", expected_unique_ids)
-    log.warning("Cleanup: expected device_ids=%s", expected_device_ids)
-
-    reg_entries = er.async_entries_for_config_entry(ent_reg, entry.entry_id)
-    log.warning("Cleanup: found %d entity registry entries for config entry %s", len(reg_entries), entry.entry_id)
-    for reg_entry in reg_entries:
-        log.warning("Cleanup: entity=%s unique_id=%s", reg_entry.entity_id, reg_entry.unique_id)
+    for reg_entry in er.async_entries_for_config_entry(ent_reg, entry.entry_id):
         if reg_entry.unique_id not in expected_unique_ids:
-            log.warning("Cleanup: REMOVING stale entity: %s", reg_entry.entity_id)
+            log.info("Removing stale entity: %s", reg_entry.entity_id)
             ent_reg.async_remove(reg_entry.entity_id)
 
-    dev_entries = dr.async_entries_for_config_entry(dev_reg, entry.entry_id)
-    log.warning("Cleanup: found %d device registry entries for config entry %s", len(dev_entries), entry.entry_id)
-    for dev_entry in dev_entries:
-        log.warning("Cleanup: device=%s identifiers=%s", dev_entry.name, dev_entry.identifiers)
+    for dev_entry in dr.async_entries_for_config_entry(dev_reg, entry.entry_id):
         if not dev_entry.identifiers & expected_device_ids:
-            log.warning("Cleanup: REMOVING stale device: %s", dev_entry.name)
+            log.info("Removing stale device: %s", dev_entry.name)
             dev_reg.async_remove_device(dev_entry.id)
 
     async_add_entities(entities)
