@@ -12,6 +12,7 @@ from homeassistant.components.cover import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
 
@@ -42,11 +43,21 @@ async def async_setup_entry(
     entities = []
     covers_registry = hass.data[DOMAIN][entry.entry_id]["covers"]
 
+    # Build set of expected unique_ids from current config
+    expected_unique_ids = set()
     for blind_config in blinds:
         entity = LightManagerBlind(lm_air, blind_config, entry.entry_id)
         entities.append(entity)
+        expected_unique_ids.add(entity.unique_id)
         # Register for webhook lookup by slug
         covers_registry[entity.slug] = entity
+
+    # Remove stale entities from the entity registry
+    ent_reg = er.async_get(hass)
+    for reg_entry in er.async_entries_for_config_entry(ent_reg, entry.entry_id):
+        if reg_entry.unique_id not in expected_unique_ids:
+            log.info("Removing stale entity: %s", reg_entry.entity_id)
+            ent_reg.async_remove(reg_entry.entity_id)
 
     async_add_entities(entities)
 
