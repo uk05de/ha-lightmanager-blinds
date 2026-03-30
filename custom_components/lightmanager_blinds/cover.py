@@ -176,6 +176,8 @@ class LightManagerBlind(CoverEntity, RestoreEntity):
 
     async def async_external_command(self, action: str) -> None:
         """Handle external command from webhook (remote control)."""
+        log.warning("DEBUG %s: external command '%s', current state: moving=%s, position=%s, task=%s",
+                    self._name, action, self._moving, self._position, self._move_task is not None)
         if action in ("up", "down"):
             await self._start_move(action, external=True)
         elif action == "stop":
@@ -206,6 +208,7 @@ class LightManagerBlind(CoverEntity, RestoreEntity):
                 duration = (self._position / 100.0) * runtime
 
         if duration <= 0:
+            log.warning("DEBUG %s: duration <= 0 (%.2f), skipping move", self._name, duration)
             return
 
         # Drift correction: add buffer only when fully opening (mechanical end stop)
@@ -229,18 +232,22 @@ class LightManagerBlind(CoverEntity, RestoreEntity):
                  self._name, direction, duration, self._position, source)
 
         # Schedule auto-stop (always send stop command, even for external moves)
+        log.warning("DEBUG %s: scheduling auto-stop in %.1fs", self._name, duration)
         self._move_task = self.hass.async_create_task(
             self._auto_stop(duration)
         )
 
-    async def _auto_stop(self, duration: float, external: bool = False) -> None:
+    async def _auto_stop(self, duration: float) -> None:
         """Auto-stop after duration."""
         await asyncio.sleep(duration)
+        log.warning("DEBUG %s: auto-stop fired after %.1fs, sending stop command", self._name, duration)
         self._move_task = None  # Clear self-reference before stopping
-        await self._stop_move(external=external)
+        await self._stop_move()
 
     async def _stop_move(self, external: bool = False) -> None:
         """Stop movement and update position."""
+        log.warning("DEBUG %s: _stop_move called, external=%s, moving=%s, task=%s",
+                    self._name, external, self._moving, self._move_task is not None)
         if self._move_task and not self._move_task.done():
             self._move_task.cancel()
             self._move_task = None
@@ -251,9 +258,12 @@ class LightManagerBlind(CoverEntity, RestoreEntity):
 
         # Send stop command (skip if triggered by remote)
         if not external:
+            log.warning("DEBUG %s: sending stop command to LM Air (id=%s)", self._name, self._id_stop)
             await self._lm_air.send_command(self._id_stop)
+        else:
+            log.warning("DEBUG %s: skipping stop command (external)", self._name)
 
-        log.info("%s: stopped at %d%%", self._name, self._position)
+        log.warning("DEBUG %s: stopped at %d%%", self._name, self._position)
 
         self._moving = None
         self._move_start_time = None
