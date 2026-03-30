@@ -198,8 +198,8 @@ class LightManagerBlind(CoverEntity, RestoreEntity):
 
         runtime = self._runtime_up if direction == "up" else self._runtime_down
 
-        if duration is None:
-            # Full movement
+        full_movement = duration is None
+        if full_movement:
             if direction == "up":
                 duration = ((100 - self._position) / 100.0) * runtime
             else:
@@ -207,6 +207,10 @@ class LightManagerBlind(CoverEntity, RestoreEntity):
 
         if duration <= 0:
             return
+
+        # Drift correction: add buffer only when fully opening (mechanical end stop)
+        if full_movement and direction == "up":
+            duration += 1.5
 
         if not external:
             lm_id = self._id_up if direction == "up" else self._id_down
@@ -224,9 +228,9 @@ class LightManagerBlind(CoverEntity, RestoreEntity):
         log.info("%s: moving %s for %.1fs (from %d%%, %s)",
                  self._name, direction, duration, self._position, source)
 
-        # Schedule auto-stop
+        # Schedule auto-stop (always send stop command, even for external moves)
         self._move_task = self.hass.async_create_task(
-            self._auto_stop(duration, external)
+            self._auto_stop(duration)
         )
 
     async def _auto_stop(self, duration: float, external: bool = False) -> None:
