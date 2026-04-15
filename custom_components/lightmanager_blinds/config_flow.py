@@ -47,7 +47,7 @@ class LightManagerBlindsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         return self.async_show_form(
             step_id="user",
             data_schema=vol.Schema({
-                vol.Required(CONF_LM_AIR_HOST, default="192.168.2.104"): str,
+                vol.Required(CONF_LM_AIR_HOST, default=""): str,
             }),
             errors=errors,
         )
