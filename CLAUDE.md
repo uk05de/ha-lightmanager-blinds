@@ -29,10 +29,9 @@
 
 ## Light Manager Air
 
-- jbmedia Light Manager Air at 192.168.2.104
+- jbmedia Light Manager Air
 - HTTP POST to `/control` with body: `cmd=idx,{lm_air_id}`
 - Each blind has 3 LM Air IDs: up, down, stop
-- Example: Kueche (Küche) = 317 (up), 318 (down), 319 (stop)
 
 ## Config Flow
 
@@ -64,17 +63,6 @@
 
 - Name -> lowercase, spaces -> `_`, ä -> ae, ö -> oe, ü -> ue, ß -> ss
 - Used for: entity unique_id, device identifier, webhook matching, covers registry key
-
-## 8 Blinds (from old config, for reference)
-
-- Wohnzimmer Links: 305/306/307, 20s up, 14s down
-- Wohnzimmer Raffstore: 311/312/313, 20s up, 19s down
-- Wohnzimmer Terrassentür: 314/315/316, 18s up, 11s down
-- Küche: 317/318/319, 20s up, 15s down
-- Kinderzimmer Links: 323/324/325, 20s up, 14.5s down
-- Ankleide: 326/327/328, 20s up, 15s down
-- Schlafzimmer Links: 329/330/331, 19s up, 14s down
-- Masterbad: 332/333/334, 19s up, 14s down
 
 ## Important Notes
 
